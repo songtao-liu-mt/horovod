@@ -83,7 +83,8 @@ def broadcast_optimizer_state(optimizer, root_rank):
         for group in optimizer.param_groups:
             for p in group['params']:
                 if p.requires_grad and id(p) not in state_dict['state']:
-                    p.grad = p.data.new(p.size()).zero_()
+                    #p.grad = p.data.new(p.size()).zero_()
+                    p.grad = torch.zeros_like(p.data)
                     if isinstance(optimizer, torch.optim.SparseAdam):
                         p.grad = p.grad.to_sparse()
 

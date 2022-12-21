@@ -181,7 +181,8 @@ class _DistributedOptimizer(torch.optim.Optimizer):
             # NOTE: this will not work if the gradient is sparse and we perform an allgather.
             # Unfrotunately, there doesn't appear to be a good way to detect that the parameter will
             # produce sparse gradients before computing the gradient.
-            p.grad = p.data.new(p.size()).zero_()
+            #p.grad = p.data.new(p.size()).zero_()
+            p.grad = torch.zeros_like(p.data)
 
         name = self._parameter_names.get(p)
         tensor = p.grad
@@ -403,7 +404,8 @@ class _DistributedAdasumOptimizer(torch.optim.Optimizer):
         for param_group in self.param_groups:
             for p in param_group['params']:
                 if p.requires_grad:
-                    p.grad = p.data.new(p.size()).zero_()
+                    #p.grad = p.data.new(p.size()).zero_()
+                    p.grad = torch.zeros_like(p.data)
                     self._requires_update.add(p)
                     p_tmp = p.expand_as(p)
                     grad_acc = p_tmp.grad_fn.next_functions[0][0]

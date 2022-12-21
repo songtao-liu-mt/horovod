@@ -96,6 +96,7 @@ _handle_map = {}
 
 def _check_function(function_factory, tensor):
     function = function_factory(tensor)
+    function = function.replace('musa','cuda')
     if not hasattr(mpi_lib, function):
         raise ValueError('Tensor type %s is not supported.' % tensor.type())
     if not tensor.is_contiguous():
@@ -187,7 +188,8 @@ def allreduce_async(tensor, average=None, name=None, op=None,
         `synchronize()`.
     """
     op = handle_average_backwards_compatibility(op, average)
-    output = tensor.new(tensor.shape)
+    #output = tensor.new(tensor.shape)
+    output = torch.zeros_like(tensor)
     return _allreduce_async(tensor, output, name, op, prescale_factor, postscale_factor, process_set)
 
 
@@ -414,7 +416,8 @@ def grouped_allreduce_async(tensors, average=None, name=None, op=None,
         `synchronize()`.
     """
     op = handle_average_backwards_compatibility(op, average)
-    outputs = [t.new(t.shape) for t in tensors]
+    #outputs = [t.new(t.shape) for t in tensors]
+    outputs = [torch.zeros_like(t) for t in tensors]
     return _grouped_allreduce_async(tensors, outputs, name, op, prescale_factor, postscale_factor, process_set)
 
 
@@ -582,7 +585,9 @@ def sparse_allreduce_async(tensor, name, op, process_set=global_process_set):
         values = (values / process_set.size()) if op == Average else values
 
         if indices.dim() == 0 or values.dim() == 0:
-            return t.new().resize_as_(t)
+            #return t.new().resize_as_(t)
+            return torch.Tensor().type_as(t).resize_as_(t)
+        # TODO support sparse tensor in mtgpu.
         return t.new(indices.transpose(0, 1), values, t.size())
 
     return handle
@@ -623,7 +628,8 @@ def allgather_async(tensor, name=None, process_set=global_process_set):
         A handle to the allgather operation that can be used with `poll()` or
         `synchronize()`.
     """
-    output = tensor.new()
+    #output = tensor.new()
+    output = torch.Tensor().type_as(tensor)
     return _allgather_async(tensor, output, name, process_set)
 
 
@@ -713,7 +719,8 @@ def grouped_allgather_async(tensors, name=None, process_set=global_process_set):
         A handle to the group allgather operation that can be used with `poll()` or
         `synchronize()`.
     """
-    outputs = [t.new() for t in tensors]
+    # outputs = [t.new() for t in tensors]
+    outputs = [torch.Tensor().type_as(t) for t in tensors]
     return _grouped_allgather_async(tensors, outputs, name, process_set)
 
 
@@ -806,7 +813,8 @@ def broadcast_async(tensor, root_rank, name=None, process_set=global_process_set
         A handle to the broadcast operation that can be used with `poll()` or
         `synchronize()`.
     """
-    output = tensor.new(tensor.shape)
+    #output = tensor.new(tensor.shape)
+    output = torch.zeros_like(tensor)
     return _broadcast_async(tensor, output, root_rank, name, process_set)
 
 
@@ -949,9 +957,11 @@ def alltoall_async(tensor, splits=None, name=None, process_set=global_process_se
         A handle to the alltoall operation that can be used with `poll()` or
         `synchronize()`.
     """
-    output = tensor.new()
+    #output = tensor.new()
+    output = torch.Tensor().type_as(tensor)
     if isinstance(splits, torch.Tensor):
-        output_received_splits = splits.new()
+        #output_received_splits = splits.new()
+        output_received_splits = torch.Tensor().type_as(splits)
     else:
         output_received_splits = torch.empty(size(), dtype=torch.int32, device='cpu')
     return _alltoall_async(tensor, splits, output, output_received_splits, name, process_set)
@@ -1057,7 +1067,8 @@ def reducescatter_async(tensor, name=None, op=Average, process_set=global_proces
         A handle to the reducescatter operation that can be used with `poll()` or
         `synchronize()`.
     """
-    output = tensor.new()
+    # output = tensor.new()
+    output = torch.Tensor().type_as(tensor)
     return _reducescatter_async(tensor, output, name, op, process_set)
 
 
@@ -1156,7 +1167,8 @@ def grouped_reducescatter_async(tensors, name=None, op=Average, process_set=glob
         A handle to the group reducescatter operation that can be used with `poll()` or
         `synchronize()`.
     """
-    outputs = [t.new() for t in tensors]
+    #outputs = [t.new() for t in tensors]
+    outputs = [torch.Tensor().type_as(t) for t in tensors]
     return _grouped_reducescatter_async(tensors, outputs, name, op, process_set)
 
 
