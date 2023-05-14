@@ -96,7 +96,7 @@ _handle_map = {}
 
 def _check_function(function_factory, tensor):
     function = function_factory(tensor)
-    function = function.replace('musa','cuda')
+    function = function.replace('musa','cuda').replace('privateuseone', 'cuda')
     if not hasattr(mpi_lib, function):
         raise ValueError('Tensor type %s is not supported.' % tensor.type())
     if not tensor.is_contiguous():
